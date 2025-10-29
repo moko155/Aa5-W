@@ -2,15 +2,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
- * This class contains the pathfinding algorithm to navigate Andrew through the desert
- * to collect gems and return to the starting position.
+ * this class is for pathfinding to navigate through 
+ * the map based on priorities 1st gems, 2nd cross paths, 3rd other valid paths. and then return home
+ * when the bag is full capacity. 
  */
 public class StartSearch {
     
     private Map desertMap;
     
     /**
-     * Constructor that creates the map from the given file
+     * creates the map from the files
      * @param filename the name of the map file
      */
     public StartSearch(String filename) {
@@ -26,11 +27,10 @@ public class StartSearch {
     }
     
     /**
-     * Main method that runs the pathfinding algorithm
-     * @param args command line arguments (map filename)
+     * Main method that has the pathfinding algorithm
+     * @param args command line arguments is mapfilename
      */
     public static void main(String[] args) {
-        // Check if filename was provided
         if (args.length < 1) {
             System.out.println("You must provide the name of the input file");
             System.exit(0);
@@ -39,51 +39,64 @@ public class StartSearch {
         String mapFileName = args[0];
         
         try {
-            // Create the map and start search
+            // Create the map and start searching
             StartSearch search = new StartSearch(mapFileName);
             
-            // Get starting information
+            // Get starting info
             MapCell start = search.desertMap.getStart();
             int bagSize = search.desertMap.bagSize();
             int gemsFound = 0;
+            System.out.println("Bag size: " + bagSize);
+
             
-            // Create stack for pathfinding
+            // Create stack for pathing
             ArrayStack<MapCell> stack = new ArrayStack<MapCell>();
             
             // Push starting cell and mark it
             stack.push(start);
             start.markInStack();
             
-            // Main pathfinding loop
+            // Iteration counter for debugging
+            int iterations = 0;
+
+            // while stack not empty and gems found is not less than bag size 
             while (!stack.isEmpty() && gemsFound < bagSize) {
                 MapCell current = stack.peek();
                 
-                // Find the best neighbor to visit
+                // Find the best next cell to visit
                 MapCell next = search.bestCell(current);
                 
+                System.out.println("Iterations: " + iterations);iterations++;
+                System.out.println("Current cell: " + current.getIdentifier());
+                System.out.println("Stack size: " + stack.size());
+                System.out.println("Gems found: " + gemsFound);
+
                 if (next != null) {
-                    // Found a valid neighbor - visit it
+
+                    System.out.println("Moving to cell: " + next.getIdentifier() + 
+                     " | Is gem? " + next.isGem());
+
                     stack.push(next);
                     next.markInStack();
                     
-                    // Check if it's a gem
+                    // Checking if it's a gem
                     if (next.isGem()) {
                         gemsFound++;
+                        System.out.println("Total gems found so far: " + gemsFound);
                     }
                 } else {
-                    // No valid neighbors - backtrack
+                    // No valid neighbors
                     MapCell popped = stack.pop();
                     popped.markOutStack();
                 }
             }
             
-            // Return home - pop remaining cells
+            // Return home and pop remaining cells
             while (!stack.isEmpty()) {
                 MapCell popped = stack.pop();
                 popped.markOutStack();
             }
             
-            // Print results
             System.out.println("Gems collected: " + gemsFound);
             
         } catch (Exception e) {
@@ -92,8 +105,8 @@ public class StartSearch {
     }
     
     /**
-     * Finds the best unmarked neighbor cell to visit next
-     * @param cell the current cell
+     * Finds best neighbor cell to visit based on priority rules
+     * @param cell current cell
      * @return the best neighbor cell, or null if no valid neighbors exist
      */
     private MapCell bestCell(MapCell cell) {
@@ -101,20 +114,19 @@ public class StartSearch {
         MapCell bestCross = null;
         MapCell bestOther = null;
         
-        // Check all 4 neighbors (0=North, 1=East, 2=South, 3=West)
+        // Check all neighbors (0=North, 1=East, 2=South, 3=West)
         for (int i = 0; i < 4; i++) {
             try {
                 MapCell neighbor = cell.getNeighbour(i);
                 
-                // Skip if neighbor doesn't exist, is marked, or is a black hole
+                // Skip if neighbor doesn't exist, is marked, or a black hole
                 if (neighbor == null || neighbor.isMarked() || neighbor.isBlackHole()) {
                     continue;
                 }
                 
-                // Check if we can move to this neighbor based on path rules
                 boolean canMove = false;
                 
-                // From Andrew, Cross path, or Gem - can go to any valid neighbor
+                // if from Start, CrossPath, or Gem go to any valid path
                 if (cell.isStart() || cell.isCrossPath() || cell.isGem()) {
                     if (neighbor.isGem() || neighbor.isCrossPath()) {
                         canMove = true;
@@ -126,7 +138,7 @@ public class StartSearch {
                         canMove = true;
                     }
                 }
-                // From Vertical path - can only go North or South
+                // From Vertical path only up or down
                 else if (cell.isVerticalPath()) {
                     if (i == 0 || i == 2) { // North or South
                         if (neighbor.isStart() || neighbor.isCrossPath() || 
@@ -135,7 +147,7 @@ public class StartSearch {
                         }
                     }
                 }
-                // From Horizontal path - can only go East or West
+                // From Horizontal path left or right
                 else if (cell.isHorizontalPath()) {
                     if (i == 1 || i == 3) { // East or West
                         if (neighbor.isStart() || neighbor.isCrossPath() || 
@@ -145,20 +157,20 @@ public class StartSearch {
                     }
                 }
                 
-                // If we can move to this neighbor, categorize it by priority
+                // TODO If we can move to this neighbor categorize it by priority
                 if (canMove) {
                     if (neighbor.isGem()) {
-                        // Priority 1: Gem (only keep first one found)
+                        // 1 first priority gem
                         if (bestGem == null) {
                             bestGem = neighbor;
                         }
                     } else if (neighbor.isCrossPath()) {
-                        // Priority 2: Cross path (keep smallest index)
+                        // 2 second priority cross path
                         if (bestCross == null) {
                             bestCross = neighbor;
                         }
                     } else {
-                        // Priority 3: Other valid paths (keep smallest index)
+                        // 3 thoird priority other valid paths
                         if (bestOther == null) {
                             bestOther = neighbor;
                         }
