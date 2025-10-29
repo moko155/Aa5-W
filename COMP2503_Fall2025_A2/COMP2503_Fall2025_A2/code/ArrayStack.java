@@ -1,7 +1,7 @@
 //import java.util.EmptyStackException;
 
 /**
- * ArrayStack is an array that 
+ * ArrayStack is an array implementation of a stack data structure
  */
 
 public class ArrayStack<T> implements ArrayStackADT<T> {
